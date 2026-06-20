@@ -13,15 +13,15 @@ import javax.servlet.http.HttpServletResponse;
 import framework.annotation.Controller;
 import framework.utils.AnnotationFinder;
 
-
 public class FrontController extends HttpServlet {
 
     private List<String> listController = new ArrayList<>();
 
     @Override
     public void init() throws ServletException {
+        String packageName = getServletConfig().getInitParameter("controller");
         try {
-            for (Class<?> clazz : AnnotationFinder.findClassWithAnnotation(Controller.class, "controllers")) {
+            for (Class<?> clazz : AnnotationFinder.findClassWithAnnotation(Controller.class, packageName)) {
                 listController.add(clazz.getName());
             }
         } catch (Exception e) {
