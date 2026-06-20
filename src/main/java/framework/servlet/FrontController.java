@@ -11,9 +11,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import framework.annotation.Controller;
-import io.github.classgraph.ClassGraph;
-import io.github.classgraph.ClassInfo;
-import io.github.classgraph.ScanResult;
+import framework.utils.AnnotationFinder;
+
 
 public class FrontController extends HttpServlet {
 
@@ -21,20 +20,18 @@ public class FrontController extends HttpServlet {
 
     @Override
     public void init() throws ServletException {
-        try (ScanResult scanResult = new ClassGraph()
-                .enableClassInfo()
-                .enableAnnotationInfo()
-                .overrideClassLoaders(
-                        Thread.currentThread().getContextClassLoader())
-                .scan();) {
-
-            for (ClassInfo classInfo : scanResult.getClassesWithAnnotation(Controller.class)) {
-                listController.add(classInfo.getSimpleName());
+        try {
+            for (Class<?> clazz : AnnotationFinder.findClassWithAnnotation(Controller.class, "controllers")) {
+                listController.add(clazz.getName());
             }
+        } catch (Exception e) {
+            throw new ServletException(e.getMessage());
         }
+
     }
 
-    @Override    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         processRequest(req, resp);
     }
 
