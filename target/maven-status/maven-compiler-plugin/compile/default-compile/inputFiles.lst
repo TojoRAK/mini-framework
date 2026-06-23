@@ -1,4 +1,7 @@
 /home/tojo/S4/WebDynamique/Framework/mini-framework/src/main/java/framework/servlet/FrontController.java
+/home/tojo/S4/WebDynamique/Framework/mini-framework/src/main/java/framework/tests/A.java
 /home/tojo/S4/WebDynamique/Framework/mini-framework/src/main/java/framework/Main.java
+/home/tojo/S4/WebDynamique/Framework/mini-framework/src/main/java/framework/annotation/Url.java
 /home/tojo/S4/WebDynamique/Framework/mini-framework/src/main/java/framework/annotation/Controller.java
+/home/tojo/S4/WebDynamique/Framework/mini-framework/src/main/java/framework/utils/AnnotationFinder.java
 /home/tojo/S4/WebDynamique/Framework/mini-framework/src/main/java/framework/utils/ClassFinder.java
