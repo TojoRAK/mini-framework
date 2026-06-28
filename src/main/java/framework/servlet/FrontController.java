@@ -27,7 +27,7 @@ public class FrontController extends HttpServlet {
         try {
             for (Class<?> clazz : AnnotationFinder.findClassWithAnnotation(Controller.class, packageName)) {
                 listController.add(clazz.getName());
-                urlControllers.putAll(AnnotationFinder.findUrls(clazz)); 
+                AnnotationFinder.findUrls(clazz,urlControllers); 
             }
         } catch (Exception e) {
             throw new ServletException(e.getMessage());
