@@ -1,4 +1,7 @@
+framework/annotation/Url.class
+framework/Main.class
 framework/servlet/FrontController.class
+framework/tests/A.class
 framework/utils/ClassFinder.class
 framework/annotation/Controller.class
-framework/Main.class
+framework/utils/AnnotationFinder.class
