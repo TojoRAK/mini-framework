@@ -23,13 +23,14 @@ public class AnnotationFinder {
         return retour;
     }
 
-    public static void findUrls(Class<?> clazz, Map<String, Method> map){
+    public static void findUrls(Class<?> clazz, Map<UrlMethod, Method> map){
         Method[] methods = clazz.getMethods();
 
         for(Method method : methods){
             if(method.isAnnotationPresent(Url.class)){
                 Url annotation = (Url) method.getAnnotation(Url.class);
-                map.put(annotation.url(),method);
+                UrlMethod urlMethod = new UrlMethod(annotation.url(), annotation.method());
+                map.put(urlMethod,method);
             }
         }
     }
