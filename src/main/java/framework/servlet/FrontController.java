@@ -15,11 +15,12 @@ import javax.servlet.http.HttpServletResponse;
 
 import framework.annotation.Controller;
 import framework.utils.AnnotationFinder;
+import framework.utils.UrlMethod;
 
 public class FrontController extends HttpServlet {
 
     private List<String> listController = new ArrayList<>();
-    private Map<String, Method> urlControllers = new HashMap<>();
+    private Map<UrlMethod, Method> urlControllers = new HashMap<>();
 
     @Override
     public void init() throws ServletException {
@@ -49,25 +50,25 @@ public class FrontController extends HttpServlet {
         String uri = req.getRequestURI().substring(req.getContextPath().length());
         resp.setContentType("text/plain");
         try {
+            String method = req.getMethod();
+
+            UrlMethod urlMethod = new UrlMethod(uri, method);
             PrintWriter out = resp.getWriter();
             out.println("Framework Personnalisé");
             out.println("URL : " + uri);
-            // out.println(listController.size());
-            Method correspondant = urlControllers.get(uri);
+
+            Method correspondant = urlControllers.get(urlMethod);
             
             for(String controller : listController){
                 out.println(controller);
             }
-            // for (Map.Entry<String, Method> entry : urlControllers.entrySet()) {
-            //     out.print(entry.getKey());
-            // }
             if (correspondant != null) {
                 out.println("Controllers avec cette url : " + correspondant.getDeclaringClass().getName() + "."
                         + correspondant.getName());
             } else {
                 out.println("Aucun URL correspondant.");
                 out.println("URL Valides :");
-                for (Map.Entry<String, Method> entry : urlControllers.entrySet()) {
+                for (Map.Entry<UrlMethod, Method> entry : urlControllers.entrySet()) {
                     out.print(entry.getKey());
                 }
             }

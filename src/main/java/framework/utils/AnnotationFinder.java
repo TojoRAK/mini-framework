@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.ServletException;
+
 import framework.annotation.Url;
 
 public class AnnotationFinder {
@@ -23,13 +25,24 @@ public class AnnotationFinder {
         return retour;
     }
 
-    public static void findUrls(Class<?> clazz, Map<String, Method> map){
+    public static void findUrls(Class<?> clazz, Map<UrlMethod, Method> map) throws ServletException {
         Method[] methods = clazz.getMethods();
 
-        for(Method method : methods){
-            if(method.isAnnotationPresent(Url.class)){
+        for (Method method : methods) {
+            if (method.isAnnotationPresent(Url.class)) {
                 Url annotation = (Url) method.getAnnotation(Url.class);
-                map.put(annotation.url(),method);
+                UrlMethod urlMethod = new UrlMethod(annotation.url(), annotation.method());
+
+                if (map.containsKey(urlMethod)) {
+                    Method ancienne = map.get(urlMethod);
+
+                    throw new ServletException(
+                            "URL dupliquée : " + urlMethod +
+                                    "\nDéjà utilisée par : "
+                                    + ancienne.getDeclaringClass().getName() + "." + ancienne.getName());
+                }
+
+                map.put(urlMethod, method);
             }
         }
     }

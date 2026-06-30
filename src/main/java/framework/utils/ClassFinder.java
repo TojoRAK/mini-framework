@@ -14,7 +14,6 @@ public class ClassFinder {
         String packagePath = packageName.replace('.', '/');
         File dossier = null;
         try {
-            // System.out.println(packagePath);
             dossier = new File(Thread.currentThread().getContextClassLoader().getResource(packagePath).toURI());
         } catch (URISyntaxException e) {
             e.printStackTrace();
