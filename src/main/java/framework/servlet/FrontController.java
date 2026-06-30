@@ -14,28 +14,18 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import framework.annotation.Controller;
-import framework.utils.AnnotationFinder;
-import framework.utils.ApplicationListener;
 import framework.utils.UrlMethod;
 
 public class FrontController extends HttpServlet {
 
-    // private List<String> listController = new ArrayList<>();
-    // private Map<UrlMethod, Method> urlControllers = new HashMap<>();
+    private List<String> listController = new ArrayList<>();
+    private Map<UrlMethod, Method> urlControllers = new HashMap<>();
 
-    // @Override
-    // public void init() throws ServletException {
-    //     String packageName = getServletConfig().getInitParameter("controller");
-    //     try {
-    //         for (Class<?> clazz : AnnotationFinder.findClassWithAnnotation(Controller.class, packageName)) {
-    //             listController.add(clazz.getName());
-    //             AnnotationFinder.findUrls(clazz, urlControllers);
-    //         }
-    //     } catch (Exception e) {
-    //         throw new ServletException(e.getMessage());
-    //     }
-    // }
+    @Override
+    public void init() throws ServletException {
+        listController =(List<String>) getServletContext().getAttribute("listController");
+        urlControllers = (Map<UrlMethod , Method>) getServletContext().getAttribute("urlControllers");
+    }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -52,12 +42,7 @@ public class FrontController extends HttpServlet {
         String uri = req.getRequestURI().substring(req.getContextPath().length());
         resp.setContentType("text/plain");
         try {
-            ServletContext context = getServletContext();
-            String method = req.getMethod();
-            Map<UrlMethod, Method> urlControllers= (Map<UrlMethod,Method>) context.getAttribute("urlControllers"); 
-            
-            List<String> listController = (List<String>) context.getAttribute("listController");
-            
+            String method = req.getMethod();            
             
             UrlMethod urlMethod = new UrlMethod(uri, method);
             PrintWriter out = resp.getWriter();
