@@ -28,7 +28,7 @@ public class FrontController extends HttpServlet {
         try {
             for (Class<?> clazz : AnnotationFinder.findClassWithAnnotation(Controller.class, packageName)) {
                 listController.add(clazz.getName());
-                AnnotationFinder.findUrls(clazz,urlControllers); 
+                AnnotationFinder.findUrls(clazz, urlControllers);
             }
         } catch (Exception e) {
             throw new ServletException(e.getMessage());
@@ -58,13 +58,22 @@ public class FrontController extends HttpServlet {
             out.println("URL : " + uri);
 
             Method correspondant = urlControllers.get(urlMethod);
-            
-            for(String controller : listController){
+
+            for (String controller : listController) {
                 out.println(controller);
             }
             if (correspondant != null) {
                 out.println("Controllers avec cette url : " + correspondant.getDeclaringClass().getName() + "."
                         + correspondant.getName());
+
+                Class<?> clazz = correspondant.getDeclaringClass();
+                try {
+                Object obj = clazz.getDeclaredConstructor().newInstance();
+                    correspondant.invoke(obj);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
             } else {
                 out.println("Aucun URL correspondant.");
                 out.println("URL Valides :");
