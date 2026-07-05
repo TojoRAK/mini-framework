@@ -8,13 +8,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import framework.annotation.Controller;
-import framework.utils.AnnotationFinder;
 import framework.utils.UrlMethod;
 
 public class FrontController extends HttpServlet {
@@ -24,15 +23,8 @@ public class FrontController extends HttpServlet {
 
     @Override
     public void init() throws ServletException {
-        String packageName = getServletConfig().getInitParameter("controller");
-        try {
-            for (Class<?> clazz : AnnotationFinder.findClassWithAnnotation(Controller.class, packageName)) {
-                listController.add(clazz.getName());
-                AnnotationFinder.findUrls(clazz, urlControllers);
-            }
-        } catch (Exception e) {
-            throw new ServletException(e.getMessage());
-        }
+        listController =(List<String>) getServletContext().getAttribute("listController");
+        urlControllers = (Map<UrlMethod , Method>) getServletContext().getAttribute("urlControllers");
     }
 
     @Override
@@ -50,13 +42,14 @@ public class FrontController extends HttpServlet {
         String uri = req.getRequestURI().substring(req.getContextPath().length());
         resp.setContentType("text/plain");
         try {
-            String method = req.getMethod();
-
+            String method = req.getMethod();            
+            
             UrlMethod urlMethod = new UrlMethod(uri, method);
             PrintWriter out = resp.getWriter();
             out.println("Framework Personnalisé");
             out.println("URL : " + uri);
 
+            out.println(listController.size());
             Method correspondant = urlControllers.get(urlMethod);
 
             for (String controller : listController) {
@@ -83,7 +76,7 @@ public class FrontController extends HttpServlet {
             }
 
         } catch (IOException e) {
-            // e.printStackTrace();
+            e.printStackTrace();
         }
 
     }
