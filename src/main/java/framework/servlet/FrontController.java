@@ -3,13 +3,10 @@ package framework.servlet;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -20,7 +17,6 @@ import framework.utils.UrlMethod;
 
 public class FrontController extends HttpServlet {
 
-    private List<String> listController = new ArrayList<>();
     private Map<UrlMethod, Method> urlControllers = new HashMap<>();
     private String prefix;
     private String suffix;
@@ -28,7 +24,7 @@ public class FrontController extends HttpServlet {
     @SuppressWarnings("unchecked")
     @Override
     public void init() throws ServletException {
-        listController = (List<String>) getServletContext().getAttribute("listController");
+        // listController = (List<String>) getServletContext().getAttribute("listController");
         urlControllers = (Map<UrlMethod, Method>) getServletContext().getAttribute("urlControllers");
         prefix = (String) getServletContext().getAttribute("prefix");
         suffix = (String) getServletContext().getAttribute("suffix");
