@@ -28,8 +28,14 @@ public class ApplicationListener implements ServletContextListener {
                 listController.add(clazz.getName());
                 AnnotationFinder.findUrls(clazz, urlControllers);
             }
+            String prefix = sc.getInitParameter("view.prefix");
+            String suffix = sc.getInitParameter("view.suffix"); 
+
             sc.setAttribute("listController", listController);
             sc.setAttribute("urlControllers", urlControllers);
+            sc.setAttribute("prefix", prefix);
+            sc.setAttribute("suffix", suffix);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
