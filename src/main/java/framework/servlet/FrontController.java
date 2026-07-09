@@ -45,68 +45,68 @@ public class FrontController extends HttpServlet {
     }
 
     private void processRequest(HttpServletRequest req, HttpServletResponse resp) {
-
         String uri = req.getRequestURI().substring(req.getContextPath().length());
-        resp.setContentType("text/plain");
-        try {
-            String method = req.getMethod();
+        String httpMethod = req.getMethod();
+        UrlMethod urlMethod = new UrlMethod(uri, httpMethod);
 
-            UrlMethod urlMethod = new UrlMethod(uri, method);
-            PrintWriter out = resp.getWriter();
-            out.println("Framework Personnalisé");
-            out.println("URL : " + uri);
+        Method controllerMethod = urlControllers.get(urlMethod);
 
-            out.println(listController.size());
-            Method correspondant = urlControllers.get(urlMethod);
-
-            for (String controller : listController) {
-                out.println(controller);
-            }
-            if (correspondant != null) {
-                out.println("Controllers avec cette url : " + correspondant.getDeclaringClass().getName() + "."
-                        + correspondant.getName());
-
-                Class<?> clazz = correspondant.getDeclaringClass();
-                try {
-                    Object obj = clazz.getDeclaredConstructor().newInstance();
-                    Object result = correspondant.invoke(obj);
-
-                    if (result instanceof ModelAndView mav) {
-                        if (mav.getValues() != null) {
-                            req.setAttribute("map", mav.getValues());
-                        }
-
-                        if (mav.getView() != null && !mav.getView().isBlank()) {
-                            String viewPath = prefix + mav.getView() + suffix;
-                            RequestDispatcher dispatcher = req.getRequestDispatcher(viewPath);
-                            dispatcher.forward(req, resp);
-                            return;
-                        }
-                        throw new ServletException("Aucune vue définie pour " + urlMethod);
-                    }
-                    if (result instanceof String text) {
-                        resp.setContentType("text/plain;charset=UTF-8");
-                        out.println("Resultat de la methode:\n");
-                        out.println(text);
-                        return;
-                    }
-
-                } catch (Exception e) {
-                    e.printStackTrace();
+        if (controllerMethod == null) {
+            resp.setContentType("text/plain;charset=UTF-8");
+            try (PrintWriter out = resp.getWriter()) {
+                out.println("Aucun URL correspondant pour : " + urlMethod);
+                out.println("URL valides :");
+                for (UrlMethod key : urlControllers.keySet()) {
+                    out.println(key);
                 }
-
-            } else {
-                out.println("Aucun URL correspondant.");
-                out.println("URL Valides :");
-                for (Map.Entry<UrlMethod, Method> entry : urlControllers.entrySet()) {
-                    out.print(entry.getKey());
-                }
+            } catch (IOException e) {
+                log("Impossible d'écrire la réponse", e);
             }
-
-        } catch (IOException e) {
-            e.printStackTrace();
+            return;
         }
 
+        try {
+            Class<?> controllerClass = controllerMethod.getDeclaringClass();
+            Object controllerInstance = controllerClass.getDeclaredConstructor().newInstance();
+            Object result = controllerMethod.invoke(controllerInstance);
+
+            if (result instanceof ModelAndView) {
+                ModelAndView mav = (ModelAndView) result;
+                for (Map.Entry<String, Object> entry : mav.getValues().entrySet()) {
+                    req.setAttribute(entry.getKey(), entry.getValue());
+                }
+                String view = mav.getView();
+                if (view == null || view.isBlank()) {
+                    throw new ServletException("Aucune vue définie pour " + urlMethod);
+                }
+                String viewPath = prefix + view + suffix;
+                RequestDispatcher dispatcher = req.getRequestDispatcher(viewPath);
+                dispatcher.forward(req, resp);
+                return;
+            }
+
+            resp.setContentType("text/plain;charset=UTF-8");
+            try (PrintWriter out = resp.getWriter()) {
+                out.println("Framework Personnalisé");
+                out.println("URL : " + uri);
+                if (result instanceof String) {
+                    out.println((String) result);
+                } else if (result != null) {
+                    out.println(result.toString());
+                } else {
+                    resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
+                }
+            }
+
+        } catch (Exception e) {
+            log("Erreur lors du traitement de la requête " + urlMethod, e);
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            try (PrintWriter out = resp.getWriter()) {
+                out.println("Erreur interne : " + e.getMessage());
+            } catch (IOException io) {
+                log("Impossible d'écrire l'erreur dans la réponse", io);
+            }
+        }
     }
 
 }
