@@ -50,7 +50,7 @@ public class FrontController extends HttpServlet {
         if (controllerMethod == null) {
             resp.setContentType("text/plain;charset=UTF-8");
             try (PrintWriter out = resp.getWriter()) {
-                out.println("Aucun URL correspondant pour : " + urlMethod);
+                out.println("URL invalide : " + urlMethod);
                 out.println("URL valides :");
                 for (UrlMethod key : urlControllers.keySet()) {
                     out.println(key);
@@ -83,15 +83,17 @@ public class FrontController extends HttpServlet {
 
             resp.setContentType("text/plain;charset=UTF-8");
             try (PrintWriter out = resp.getWriter()) {
-                out.println("Framework Personnalisé");
-                out.println("URL : " + uri);
                 if (result instanceof String) {
                     out.println((String) result);
-                } else if (result != null) {
-                    out.println(result.toString());
                 } else {
-                    resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
+                    out.println("URL trouvé : " + controllerClass.getName() + "." + controllerMethod.getName());
                 }
+                out.println("URL valides :");
+                for (UrlMethod key : urlControllers.keySet()) {
+                    out.println(key);
+                }
+            } catch (IOException e) {
+                log("Impossible d'écrire la réponse", e);
             }
 
         } catch (Exception e) {
