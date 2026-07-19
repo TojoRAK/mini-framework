@@ -6,11 +6,13 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import org.springframework.context.ApplicationContext;
+
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import framework.utils.ModelAndView;
 import framework.utils.UrlMethod;
@@ -20,14 +22,17 @@ public class FrontController extends HttpServlet {
     private Map<UrlMethod, Method> urlControllers = new HashMap<>();
     private String prefix;
     private String suffix;
+    private ApplicationContext springContext;
 
     @SuppressWarnings("unchecked")
     @Override
     public void init() throws ServletException {
-        // listController = (List<String>) getServletContext().getAttribute("listController");
+        // listController = (List<String>)
+        // getServletContext().getAttribute("listController");
         urlControllers = (Map<UrlMethod, Method>) getServletContext().getAttribute("urlControllers");
         prefix = (String) getServletContext().getAttribute("prefix");
         suffix = (String) getServletContext().getAttribute("suffix");
+        springContext = (ApplicationContext) getServletContext().getAttribute("springContext");
     }
 
     @Override
@@ -64,7 +69,19 @@ public class FrontController extends HttpServlet {
         try {
             Class<?> controllerClass = controllerMethod.getDeclaringClass();
             Object controllerInstance = controllerClass.getDeclaredConstructor().newInstance();
-            Object result = controllerMethod.invoke(controllerInstance);
+
+            Class<?>[] parameterTypes = controllerMethod.getParameterTypes();
+            Object[] parameters = new Object[parameterTypes.length];
+            for (int i = 0; i < parameterTypes.length; i++) {
+                Class<?> paramType = parameterTypes[i];
+
+                if (paramType.equals(ApplicationContext.class)) {
+                    parameters[i] = springContext;
+                } else {
+                    parameters[i] = null;
+                }
+            }
+            Object result = controllerMethod.invoke(controllerInstance, parameters);
 
             if (result instanceof ModelAndView) {
                 ModelAndView mav = (ModelAndView) result;
