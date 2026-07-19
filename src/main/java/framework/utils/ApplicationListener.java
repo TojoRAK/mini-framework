@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -28,8 +27,14 @@ public class ApplicationListener implements ServletContextListener {
                 listController.add(clazz.getName());
                 AnnotationFinder.findUrls(clazz, urlControllers);
             }
+            String prefix = sc.getInitParameter("view.prefix");
+            String suffix = sc.getInitParameter("view.suffix"); 
+
             sc.setAttribute("listController", listController);
             sc.setAttribute("urlControllers", urlControllers);
+            sc.setAttribute("prefix", prefix);
+            sc.setAttribute("suffix", suffix);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
