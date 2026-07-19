@@ -6,19 +6,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
-import javax.servlet.annotation.WebListener;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
+
+import org.springframework.context.ApplicationContext;
+import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import framework.annotation.Controller;
 
-@WebListener
 public class ApplicationListener implements ServletContextListener {
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         try {
+            ApplicationContext springContext = WebApplicationContextUtils.getRequiredWebApplicationContext(sce.getServletContext());
             List<String> listController = new ArrayList<>();
             Map<UrlMethod, Method> urlControllers = new HashMap<>();
             ServletContext sc = sce.getServletContext();
@@ -28,12 +30,13 @@ public class ApplicationListener implements ServletContextListener {
                 AnnotationFinder.findUrls(clazz, urlControllers);
             }
             String prefix = sc.getInitParameter("view.prefix");
-            String suffix = sc.getInitParameter("view.suffix"); 
+            String suffix = sc.getInitParameter("view.suffix");
 
             sc.setAttribute("listController", listController);
             sc.setAttribute("urlControllers", urlControllers);
             sc.setAttribute("prefix", prefix);
             sc.setAttribute("suffix", suffix);
+            sc.setAttribute("springContext", springContext);
 
         } catch (Exception e) {
             e.printStackTrace();
