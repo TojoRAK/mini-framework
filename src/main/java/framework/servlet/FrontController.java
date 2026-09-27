@@ -8,14 +8,17 @@ import java.util.Map;
 
 import org.springframework.context.ApplicationContext;
 
-import jakarta.servlet.RequestDispatcher;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import framework.annotation.Json;
 import framework.utils.ModelAndView;
 import framework.utils.UrlMethod;
+// import tools.jackson.databind.ObjectMapper;
 
 public class FrontController extends HttpServlet {
 
@@ -29,6 +32,9 @@ public class FrontController extends HttpServlet {
     public void init() throws ServletException {
         // listController = (List<String>)
         // getServletContext().getAttribute("listController");
+        System.out.println(
+                "FrontController : " +
+                        getServletContext().getAttribute("urlControllers"));
         urlControllers = (Map<UrlMethod, Method>) getServletContext().getAttribute("urlControllers");
         prefix = (String) getServletContext().getAttribute("prefix");
         suffix = (String) getServletContext().getAttribute("suffix");
@@ -81,8 +87,22 @@ public class FrontController extends HttpServlet {
                     parameters[i] = null;
                 }
             }
+
             Object result = controllerMethod.invoke(controllerInstance, parameters);
 
+            if (controllerMethod.isAnnotationPresent(Json.class)) {
+                resp.setContentType("application/json");
+                String json = "";
+                if (result instanceof String) {
+                    json = (String) result;
+                } else {
+                    ObjectMapper mapper = new ObjectMapper();
+                   json = mapper.writeValueAsString(result);
+                }
+                try (PrintWriter out = resp.getWriter()) {
+                    out.println(json);
+                }
+            }
             if (result instanceof ModelAndView) {
                 ModelAndView mav = (ModelAndView) result;
                 for (Map.Entry<String, Object> entry : mav.getValues().entrySet()) {
