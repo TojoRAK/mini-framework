@@ -6,9 +6,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.ServletContextEvent;
-import jakarta.servlet.ServletContextListener;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -20,7 +20,7 @@ public class ApplicationListener implements ServletContextListener {
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         try {
-            ApplicationContext springContext = WebApplicationContextUtils.getRequiredWebApplicationContext(sce.getServletContext());
+
             List<String> listController = new ArrayList<>();
             Map<UrlMethod, Method> urlControllers = new HashMap<>();
             ServletContext sc = sce.getServletContext();
@@ -34,8 +34,14 @@ public class ApplicationListener implements ServletContextListener {
 
             sc.setAttribute("listController", listController);
             sc.setAttribute("urlControllers", urlControllers);
+            sc.setAttribute("urlControllers", urlControllers);
+
+            System.out.println(
+                    "Listener : " + sc.getAttribute("urlControllers"));
             sc.setAttribute("prefix", prefix);
             sc.setAttribute("suffix", suffix);
+            ApplicationContext springContext = WebApplicationContextUtils
+                    .getRequiredWebApplicationContext(sce.getServletContext());
             sc.setAttribute("springContext", springContext);
 
         } catch (Exception e) {
