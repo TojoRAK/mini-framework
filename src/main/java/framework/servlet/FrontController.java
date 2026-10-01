@@ -3,6 +3,7 @@ package framework.servlet;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -64,7 +65,8 @@ public class FrontController extends HttpServlet {
         }
     }
 
-    private void processModelAndView(Object result, HttpServletRequest req, HttpServletResponse resp, UrlMethod urlMethod) throws ServletException, IOException {
+    private void processModelAndView(Object result, HttpServletRequest req, HttpServletResponse resp,
+            UrlMethod urlMethod) throws ServletException, IOException {
         ModelAndView mav = (ModelAndView) result;
         for (Map.Entry<String, Object> entry : mav.getValues().entrySet()) {
             req.setAttribute(entry.getKey(), entry.getValue());
@@ -76,6 +78,48 @@ public class FrontController extends HttpServlet {
         String viewPath = prefix + view + suffix;
         RequestDispatcher dispatcher = req.getRequestDispatcher(viewPath);
         dispatcher.forward(req, resp);
+    }
+
+    private Object parseParameter(String value, Class<?> type) {
+
+        if (type == String.class) {
+            return value;
+        }
+
+        if (type == int.class) {
+            return Integer.parseInt(value);
+        }
+
+        if (type == long.class) {
+            return Long.parseLong(value);
+        }
+
+        if (type == double.class) {
+            return Double.parseDouble(value);
+        }
+
+        if (type == float.class) {
+            return Float.parseFloat(value);
+        }
+
+        if (type == short.class) {
+            return Short.parseShort(value);
+        }
+
+        if (type == byte.class) {
+            return Byte.parseByte(value);
+        }
+
+        if (type == boolean.class) {
+            return Boolean.parseBoolean(value);
+        }
+
+        if (type == char.class) {
+            return value.charAt(0);
+        }
+
+        throw new IllegalArgumentException(
+                "Type de paramètre non supporté : " + type.getName());
     }
 
     private void processRequest(HttpServletRequest req, HttpServletResponse resp) {
@@ -104,14 +148,25 @@ public class FrontController extends HttpServlet {
             Object controllerInstance = controllerClass.getDeclaredConstructor().newInstance();
 
             Class<?>[] parameterTypes = controllerMethod.getParameterTypes();
+            Parameter[] parametersP = controllerMethod.getParameters();
+
+            for (Parameter parameter : parametersP) {
+                System.out.println("Nom = " + parameter.getName());
+                System.out.println("Présent = " + parameter.isNamePresent());
+            }
             Object[] parameters = new Object[parameterTypes.length];
+            System.out.println("Paramètres : ");
+
             for (int i = 0; i < parameterTypes.length; i++) {
                 Class<?> paramType = parameterTypes[i];
-
                 if (paramType.equals(ApplicationContext.class)) {
                     parameters[i] = springContext;
                 } else {
-                    parameters[i] = null;
+                    String name = parametersP[i].getName();
+
+                    String parameterVal = req.getParameter(name);
+
+                    parameters[i] = parseParameter(parameterVal, paramType);
                 }
             }
 
