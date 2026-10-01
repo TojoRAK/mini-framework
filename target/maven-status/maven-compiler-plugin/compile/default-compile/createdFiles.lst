@@ -1,6 +1,5 @@
 framework/annotation/Url.class
 framework/utils/ApplicationListener.class
-framework/controllers/A.class
 framework/Main.class
 framework/servlet/FrontController.class
 framework/utils/UrlMethod.class
