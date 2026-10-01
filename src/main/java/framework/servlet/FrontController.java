@@ -119,30 +119,9 @@ public class FrontController extends HttpServlet {
 
             if (controllerMethod.isAnnotationPresent(Json.class)) {
                 resp.setContentType("application/json");
-                // String json = "";
-                // if (result instanceof String) {
-                // json = (String) result;
-                // } else {
-                // ObjectMapper mapper = new ObjectMapper();
-                // json = mapper.writeValueAsString(result);
-                // }
-                // try (PrintWriter out = resp.getWriter()) {
-                // out.println(json);
-                // }
                 processJson(result, resp);
             }
             if (result instanceof ModelAndView) {
-                // ModelAndView mav = (ModelAndView) result;
-                // for (Map.Entry<String, Object> entry : mav.getValues().entrySet()) {
-                //     req.setAttribute(entry.getKey(), entry.getValue());
-                // }
-                // String view = mav.getView();
-                // if (view == null || view.isBlank()) {
-                //     throw new ServletException("Aucune vue définie pour " + urlMethod);
-                // }
-                // String viewPath = prefix + view + suffix;
-                // RequestDispatcher dispatcher = req.getRequestDispatcher(viewPath);
-                // dispatcher.forward(req, resp);
                 processModelAndView(result, req, resp, urlMethod);
                 return;
             }
