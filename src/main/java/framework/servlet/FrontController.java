@@ -2,6 +2,7 @@ package framework.servlet;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.HashMap;
@@ -122,6 +123,61 @@ public class FrontController extends HttpServlet {
                 "Type de paramètre non supporté : " + type.getName());
     }
 
+    private void invokeSetter(Object o, Field attribut, Object val) {
+        String attributeName = attribut.getName();
+        String methodName = "set" + attributeName.substring(0, 1).toUpperCase() + attributeName.substring(1);
+        try {
+            Method m = o.getClass().getMethod(methodName, val.getClass());
+            m.invoke(o, val);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private void parseFromRequest(HttpServletRequest req, Object o) {
+        Class<?> clazz = o.getClass();
+        Field[] attributes = clazz.getDeclaredFields();
+        System.out.println("Classe de o : " + o.getClass().getName());
+        System.out.println("Classe : " + clazz.getName());
+
+        for (Field f : attributes) {
+            f.setAccessible(true);
+            Class<?> attrType = f.getType();
+            System.out.println("NOM DU PARAMETRE : " + f.getName() + " " + req.getParameter(f.getName()));
+            invokeSetter(o, f, parseParameter(req.getParameter(f.getName()), attrType));
+        }
+    }
+
+    private Object[] initParams(Method method, HttpServletRequest req) throws Exception {
+        Class<?>[] parameterTypes = method.getParameterTypes();
+        Parameter[] parametersP = method.getParameters();
+        Object[] parameters = new Object[parameterTypes.length];
+
+        for (Parameter parameter : parametersP) {
+            System.out.println("Nom = " + parameter.getName());
+            System.out.println("Présent = " + parameter.isNamePresent());
+        }
+        for (int i = 0; i < parameterTypes.length; i++) {
+            Class<?> paramType = parameterTypes[i];
+            if (paramType.equals(ApplicationContext.class)) {
+                parameters[i] = springContext;
+            } else if (paramType.isPrimitive()) {
+                String name = parametersP[i].getName();
+
+                String parameterVal = req.getParameter(name);
+
+                parameters[i] = parseParameter(parameterVal, paramType);
+            } else {
+                System.out.println("TYPE DU PARAMETRE : " + parametersP[i].getType());
+                Object obj = parametersP[i].getType().getConstructor().newInstance();
+                parseFromRequest(req, obj);
+                parameters[i] = obj;
+            }
+        }
+        return parameters;
+    }
+
     private void processRequest(HttpServletRequest req, HttpServletResponse resp) {
         String uri = req.getRequestURI().substring(req.getContextPath().length());
         String httpMethod = req.getMethod();
@@ -147,29 +203,8 @@ public class FrontController extends HttpServlet {
             Class<?> controllerClass = controllerMethod.getDeclaringClass();
             Object controllerInstance = controllerClass.getDeclaredConstructor().newInstance();
 
-            Class<?>[] parameterTypes = controllerMethod.getParameterTypes();
-            Parameter[] parametersP = controllerMethod.getParameters();
-
-            for (Parameter parameter : parametersP) {
-                System.out.println("Nom = " + parameter.getName());
-                System.out.println("Présent = " + parameter.isNamePresent());
-            }
-            Object[] parameters = new Object[parameterTypes.length];
             System.out.println("Paramètres : ");
-
-            for (int i = 0; i < parameterTypes.length; i++) {
-                Class<?> paramType = parameterTypes[i];
-                if (paramType.equals(ApplicationContext.class)) {
-                    parameters[i] = springContext;
-                } else {
-                    String name = parametersP[i].getName();
-
-                    String parameterVal = req.getParameter(name);
-
-                    parameters[i] = parseParameter(parameterVal, paramType);
-                }
-            }
-
+            Object[] parameters = initParams(controllerMethod, req);
             Object result = controllerMethod.invoke(controllerInstance, parameters);
 
             if (controllerMethod.isAnnotationPresent(Json.class)) {
@@ -201,6 +236,7 @@ public class FrontController extends HttpServlet {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             try (PrintWriter out = resp.getWriter()) {
                 out.println("Erreur interne : " + e.getMessage());
+                e.printStackTrace();
             } catch (IOException io) {
                 log("Impossible d'écrire l'erreur dans la réponse", io);
             }
