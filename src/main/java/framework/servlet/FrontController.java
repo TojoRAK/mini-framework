@@ -2,7 +2,9 @@ package framework.servlet;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -51,6 +53,131 @@ public class FrontController extends HttpServlet {
         processRequest(req, resp);
     }
 
+    private void processJson(Object o, HttpServletResponse resp) throws IOException {
+        String json = "";
+        if (o instanceof String) {
+            json = (String) o;
+        } else {
+            ObjectMapper mapper = new ObjectMapper();
+            json = mapper.writeValueAsString(o);
+        }
+        try (PrintWriter out = resp.getWriter()) {
+            out.println(json);
+        }
+    }
+
+    private void processModelAndView(Object result, HttpServletRequest req, HttpServletResponse resp,
+            UrlMethod urlMethod) throws ServletException, IOException {
+        ModelAndView mav = (ModelAndView) result;
+        for (Map.Entry<String, Object> entry : mav.getValues().entrySet()) {
+            req.setAttribute(entry.getKey(), entry.getValue());
+        }
+        String view = mav.getView();
+        if (view == null || view.isBlank()) {
+            throw new ServletException("Aucune vue définie pour " + urlMethod);
+        }
+        String viewPath = prefix + view + suffix;
+        RequestDispatcher dispatcher = req.getRequestDispatcher(viewPath);
+        dispatcher.forward(req, resp);
+    }
+
+    private Object parseParameter(String value, Class<?> type) {
+
+        if (type == String.class) {
+            return value;
+        }
+
+        if (type == int.class) {
+            return Integer.parseInt(value);
+        }
+
+        if (type == long.class) {
+            return Long.parseLong(value);
+        }
+
+        if (type == double.class) {
+            return Double.parseDouble(value);
+        }
+
+        if (type == float.class) {
+            return Float.parseFloat(value);
+        }
+
+        if (type == short.class) {
+            return Short.parseShort(value);
+        }
+
+        if (type == byte.class) {
+            return Byte.parseByte(value);
+        }
+
+        if (type == boolean.class) {
+            return Boolean.parseBoolean(value);
+        }
+
+        if (type == char.class) {
+            return value.charAt(0);
+        }
+
+        throw new IllegalArgumentException(
+                "Type de paramètre non supporté : " + type.getName());
+    }
+
+    private void invokeSetter(Object o, Field attribut, Object val) {
+        String attributeName = attribut.getName();
+        String methodName = "set" + attributeName.substring(0, 1).toUpperCase() + attributeName.substring(1);
+        try {
+            Method m = o.getClass().getMethod(methodName, val.getClass());
+            m.invoke(o, val);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private void parseFromRequest(HttpServletRequest req, Object o) {
+        Class<?> clazz = o.getClass();
+        Field[] attributes = clazz.getDeclaredFields();
+        System.out.println("Classe de o : " + o.getClass().getName());
+        System.out.println("Classe : " + clazz.getName());
+
+        for (Field f : attributes) {
+            f.setAccessible(true);
+            Class<?> attrType = f.getType();
+            System.out.println("NOM DU PARAMETRE : " + f.getName() + " " + req.getParameter(f.getName()));
+            invokeSetter(o, f, parseParameter(req.getParameter(f.getName()), attrType));
+        }
+    }
+
+    private Object[] initParams(Method method, HttpServletRequest req) throws Exception {
+        Class<?>[] parameterTypes = method.getParameterTypes();
+        Parameter[] parametersP = method.getParameters();
+        Object[] parameters = new Object[parameterTypes.length];
+
+        for (Parameter parameter : parametersP) {
+            System.out.println("Nom = " + parameter.getName());
+            System.out.println("Présent = " + parameter.isNamePresent());
+        }
+        for (int i = 0; i < parameterTypes.length; i++) {
+            Class<?> paramType = parameterTypes[i];
+            if (paramType.equals(ApplicationContext.class)) {
+                parameters[i] = springContext;
+            } else if (paramType.isPrimitive()) {
+                String name = parametersP[i].getName();
+
+                String parameterVal = req.getParameter(name);
+
+                parameters[i] = parseParameter(parameterVal, paramType);
+            } else {
+                System.out.println("TYPE DU PARAMETRE : " + parametersP[i].getType());
+                Object obj = parametersP[i].getType().getConstructor().newInstance();
+                parseFromRequest(req, obj);
+                parameters[i] = obj;
+            }
+        }
+        return parameters;
+    }
+
     private void processRequest(HttpServletRequest req, HttpServletResponse resp) {
         String uri = req.getRequestURI().substring(req.getContextPath().length());
         String httpMethod = req.getMethod();
@@ -76,45 +203,16 @@ public class FrontController extends HttpServlet {
             Class<?> controllerClass = controllerMethod.getDeclaringClass();
             Object controllerInstance = controllerClass.getDeclaredConstructor().newInstance();
 
-            Class<?>[] parameterTypes = controllerMethod.getParameterTypes();
-            Object[] parameters = new Object[parameterTypes.length];
-            for (int i = 0; i < parameterTypes.length; i++) {
-                Class<?> paramType = parameterTypes[i];
-
-                if (paramType.equals(ApplicationContext.class)) {
-                    parameters[i] = springContext;
-                } else {
-                    parameters[i] = null;
-                }
-            }
-
+            System.out.println("Paramètres : ");
+            Object[] parameters = initParams(controllerMethod, req);
             Object result = controllerMethod.invoke(controllerInstance, parameters);
 
             if (controllerMethod.isAnnotationPresent(Json.class)) {
                 resp.setContentType("application/json");
-                String json = "";
-                if (result instanceof String) {
-                    json = (String) result;
-                } else {
-                    ObjectMapper mapper = new ObjectMapper();
-                   json = mapper.writeValueAsString(result);
-                }
-                try (PrintWriter out = resp.getWriter()) {
-                    out.println(json);
-                }
+                processJson(result, resp);
             }
             if (result instanceof ModelAndView) {
-                ModelAndView mav = (ModelAndView) result;
-                for (Map.Entry<String, Object> entry : mav.getValues().entrySet()) {
-                    req.setAttribute(entry.getKey(), entry.getValue());
-                }
-                String view = mav.getView();
-                if (view == null || view.isBlank()) {
-                    throw new ServletException("Aucune vue définie pour " + urlMethod);
-                }
-                String viewPath = prefix + view + suffix;
-                RequestDispatcher dispatcher = req.getRequestDispatcher(viewPath);
-                dispatcher.forward(req, resp);
+                processModelAndView(result, req, resp, urlMethod);
                 return;
             }
 
@@ -138,6 +236,7 @@ public class FrontController extends HttpServlet {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             try (PrintWriter out = resp.getWriter()) {
                 out.println("Erreur interne : " + e.getMessage());
+                e.printStackTrace();
             } catch (IOException io) {
                 log("Impossible d'écrire l'erreur dans la réponse", io);
             }
