@@ -5,6 +5,7 @@ import java.io.PrintWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,20 +15,29 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
+
 import framework.annotation.Json;
+import framework.utils.FileMap;
+import framework.utils.FileUtils;
 import framework.utils.ModelAndView;
+import framework.utils.PropertiesReader;
 import framework.utils.UrlMethod;
 // import tools.jackson.databind.ObjectMapper;
 
+@MultipartConfig
 public class FrontController extends HttpServlet {
 
     private Map<UrlMethod, Method> urlControllers = new HashMap<>();
     private String prefix;
     private String suffix;
+    private String uploadPath;
     private ApplicationContext springContext;
+
 
     @SuppressWarnings("unchecked")
     @Override
@@ -40,6 +50,7 @@ public class FrontController extends HttpServlet {
         urlControllers = (Map<UrlMethod, Method>) getServletContext().getAttribute("urlControllers");
         prefix = (String) getServletContext().getAttribute("prefix");
         suffix = (String) getServletContext().getAttribute("suffix");
+        uploadPath = (String) getServletContext().getAttribute("uploadLocation");
         springContext = (ApplicationContext) getServletContext().getAttribute("springContext");
     }
 
@@ -135,13 +146,48 @@ public class FrontController extends HttpServlet {
 
     }
 
-    private void parseFromRequest(HttpServletRequest req, Object o) {
+    private void handleFileInput(HttpServletRequest req, FileMap m)
+            throws Exception {
+
+        Part fichier = req.getPart("fichier");
+
+        if (fichier == null || fichier.getSize() == 0) {
+            return;
+        }
+
+        String nomFichier = fichier.getSubmittedFileName();
+
+        m.setNomFichier(nomFichier);
+
+        int index = nomFichier.lastIndexOf('.');
+        m.setExtension(
+                index > 0 && index < nomFichier.length() - 1
+                        ? nomFichier.substring(index + 1).toLowerCase()
+                        : "");
+
+        try (var input = fichier.getInputStream()) {
+            m.setBin(input.readAllBytes());
+        }
+
+        Path chemin = FileUtils.sauvegarderFichier(m, uploadPath);
+
+        System.out.println("Fichier enregistré : " + chemin);
+    }
+
+    private void parseFromRequest(HttpServletRequest req, Object o) throws Exception {
         Class<?> clazz = o.getClass();
         Field[] attributes = clazz.getDeclaredFields();
         System.out.println("Classe de o : " + o.getClass().getName());
         System.out.println("Classe : " + clazz.getName());
 
         for (Field f : attributes) {
+            Class<?> fieldType = f.getType();
+            if (fieldType.equals(FileMap.class)) {
+                FileMap map = new FileMap();
+                handleFileInput(req, map);
+                invokeSetter(o, f, map);
+                continue;
+            }
             f.setAccessible(true);
             Class<?> attrType = f.getType();
             System.out.println("NOM DU PARAMETRE : " + f.getName() + " " + req.getParameter(f.getName()));

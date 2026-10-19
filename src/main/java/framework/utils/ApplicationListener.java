@@ -35,7 +35,10 @@ public class ApplicationListener implements ServletContextListener {
             sc.setAttribute("listController", listController);
             sc.setAttribute("urlControllers", urlControllers);
             sc.setAttribute("urlControllers", urlControllers);
+            
+            String uploadLocation = PropertiesReader.getProperty("upload-path");
 
+            sc.setAttribute("uploadLocation", uploadLocation);
             System.out.println(
                     "Listener : " + sc.getAttribute("urlControllers"));
             sc.setAttribute("prefix", prefix);

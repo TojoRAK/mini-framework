@@ -7,5 +7,8 @@
 /home/tojo/S4/WebDynamique/Framework/mini-framework/src/main/java/framework/utils/AnnotationFinder.java
 /home/tojo/S4/WebDynamique/Framework/mini-framework/src/main/java/framework/utils/ApplicationListener.java
 /home/tojo/S4/WebDynamique/Framework/mini-framework/src/main/java/framework/utils/ClassFinder.java
+/home/tojo/S4/WebDynamique/Framework/mini-framework/src/main/java/framework/utils/FileMap.java
+/home/tojo/S4/WebDynamique/Framework/mini-framework/src/main/java/framework/utils/FileUtils.java
 /home/tojo/S4/WebDynamique/Framework/mini-framework/src/main/java/framework/utils/ModelAndView.java
+/home/tojo/S4/WebDynamique/Framework/mini-framework/src/main/java/framework/utils/PropertiesReader.java
 /home/tojo/S4/WebDynamique/Framework/mini-framework/src/main/java/framework/utils/UrlMethod.java
