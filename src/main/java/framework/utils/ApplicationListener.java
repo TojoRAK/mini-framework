@@ -24,6 +24,10 @@ public class ApplicationListener implements ServletContextListener {
             List<String> listController = new ArrayList<>();
             Map<UrlMethod, Method> urlControllers = new HashMap<>();
             ServletContext sc = sce.getServletContext();
+
+            Map<String, SessionFw> sessions = new HashMap<>();
+            sc.setAttribute("sessions", sessions);
+
             String packageName = sc.getInitParameter("controller");
             for (Class<?> clazz : AnnotationFinder.findClassWithAnnotation(Controller.class, packageName)) {
                 listController.add(clazz.getName());
@@ -33,7 +37,6 @@ public class ApplicationListener implements ServletContextListener {
             String suffix = sc.getInitParameter("view.suffix");
 
             sc.setAttribute("listController", listController);
-            sc.setAttribute("urlControllers", urlControllers);
             sc.setAttribute("urlControllers", urlControllers);
             
             String uploadLocation = PropertiesReader.getProperty("upload-path");

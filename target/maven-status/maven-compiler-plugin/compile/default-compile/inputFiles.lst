@@ -11,4 +11,6 @@
 /home/tojo/S4/WebDynamique/Framework/mini-framework/src/main/java/framework/utils/FileUtils.java
 /home/tojo/S4/WebDynamique/Framework/mini-framework/src/main/java/framework/utils/ModelAndView.java
 /home/tojo/S4/WebDynamique/Framework/mini-framework/src/main/java/framework/utils/PropertiesReader.java
+/home/tojo/S4/WebDynamique/Framework/mini-framework/src/main/java/framework/utils/SessionFw.java
+/home/tojo/S4/WebDynamique/Framework/mini-framework/src/main/java/framework/utils/SessionUtils.java
 /home/tojo/S4/WebDynamique/Framework/mini-framework/src/main/java/framework/utils/UrlMethod.java
