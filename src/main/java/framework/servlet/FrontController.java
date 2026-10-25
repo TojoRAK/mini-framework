@@ -19,13 +19,15 @@ import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import javax.servlet.http.Part;
 
 import framework.annotation.Json;
 import framework.utils.FileMap;
 import framework.utils.FileUtils;
 import framework.utils.ModelAndView;
-import framework.utils.PropertiesReader;
+import framework.utils.SessionFw;
+import framework.utils.SessionUtils;
 import framework.utils.UrlMethod;
 // import tools.jackson.databind.ObjectMapper;
 
@@ -37,7 +39,7 @@ public class FrontController extends HttpServlet {
     private String suffix;
     private String uploadPath;
     private ApplicationContext springContext;
-
+    private Map<String, SessionFw> sessions;
 
     @SuppressWarnings("unchecked")
     @Override
@@ -52,6 +54,7 @@ public class FrontController extends HttpServlet {
         suffix = (String) getServletContext().getAttribute("suffix");
         uploadPath = (String) getServletContext().getAttribute("uploadLocation");
         springContext = (ApplicationContext) getServletContext().getAttribute("springContext");
+        sessions = (Map<String, SessionFw>) getServletContext().getAttribute("sessions");
     }
 
     @Override
@@ -195,6 +198,15 @@ public class FrontController extends HttpServlet {
         }
     }
 
+    private SessionFw getSession(HttpServletRequest req) {
+        HttpSession httpSession = req.getSession();
+        return sessions.computeIfAbsent(httpSession.getId(), id -> {
+            SessionFw newSession = new SessionFw();
+            SessionUtils.chargerSessionMap(newSession, httpSession);
+            return newSession;
+        });
+    }
+
     private Object[] initParams(Method method, HttpServletRequest req) throws Exception {
         Class<?>[] parameterTypes = method.getParameterTypes();
         Parameter[] parametersP = method.getParameters();
@@ -214,6 +226,8 @@ public class FrontController extends HttpServlet {
                 String parameterVal = req.getParameter(name);
 
                 parameters[i] = parseParameter(parameterVal, paramType);
+            } else if (paramType.equals(SessionFw.class)) {
+                parameters[i] = getSession(req);
             } else {
                 System.out.println("TYPE DU PARAMETRE : " + parametersP[i].getType());
                 Object obj = parametersP[i].getType().getConstructor().newInstance();
@@ -251,7 +265,18 @@ public class FrontController extends HttpServlet {
 
             System.out.println("Paramètres : ");
             Object[] parameters = initParams(controllerMethod, req);
+            SessionFw session = null;
+            for (Object parameter : parameters) {
+                if (parameter instanceof SessionFw) {
+                    session = (SessionFw) parameter;
+                    break;
+                }
+            }
+
             Object result = controllerMethod.invoke(controllerInstance, parameters);
+            if (session != null) {
+                SessionUtils.ecraserSession(session, req.getSession());
+            }
 
             if (controllerMethod.isAnnotationPresent(Json.class)) {
                 resp.setContentType("application/json");
