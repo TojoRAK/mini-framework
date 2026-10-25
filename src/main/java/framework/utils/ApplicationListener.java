@@ -18,6 +18,9 @@ import framework.annotation.Controller;
 
 public class ApplicationListener implements ServletContextListener {
 
+    private static final String AUTH_SESSION_ATTRIBUTE_PARAM = "";
+    private static final String AUTH_SESSION_ATTRIBUTE_PROPERTY = "auth-session-attribute";
+
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         try {
@@ -36,9 +39,14 @@ public class ApplicationListener implements ServletContextListener {
             }
             String prefix = sc.getInitParameter("view.prefix");
             String suffix = sc.getInitParameter("view.suffix");
+            String authSessionAttribute = sc.getInitParameter("auth-session-attribute");
+            if (authSessionAttribute == null || authSessionAttribute.isBlank()) {
+                authSessionAttribute = PropertiesReader.getProperty(AUTH_SESSION_ATTRIBUTE_PROPERTY);
+            }
 
             sc.setAttribute("listController", listController);
             sc.setAttribute("urlControllers", urlControllers);
+            sc.setAttribute("authSessionAttribute", authSessionAttribute);
             
             String uploadLocation = PropertiesReader.getProperty("upload-path");
 

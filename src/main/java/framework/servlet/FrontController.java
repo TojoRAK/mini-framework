@@ -23,6 +23,7 @@ import javax.servlet.http.HttpSession;
 import javax.servlet.http.Part;
 
 import framework.annotation.Json;
+import framework.annotation.RequireAuth;
 import framework.utils.FileMap;
 import framework.utils.FileUtils;
 import framework.utils.ModelAndView;
@@ -40,6 +41,7 @@ public class FrontController extends HttpServlet {
     private String uploadPath;
     private ApplicationContext springContext;
     private Map<String, SessionFw> sessions;
+    private String authSessionAttribute;
 
     @SuppressWarnings("unchecked")
     @Override
@@ -55,6 +57,7 @@ public class FrontController extends HttpServlet {
         uploadPath = (String) getServletContext().getAttribute("uploadLocation");
         springContext = (ApplicationContext) getServletContext().getAttribute("springContext");
         sessions = (Map<String, SessionFw>) getServletContext().getAttribute("sessions");
+        authSessionAttribute = (String) getServletContext().getAttribute("authSessionAttribute");
     }
 
     @Override
@@ -207,6 +210,25 @@ public class FrontController extends HttpServlet {
         });
     }
 
+    private boolean isAuthenticated(HttpServletRequest req) {
+        if (authSessionAttribute == null || authSessionAttribute.isBlank()) {
+            return false;
+        }
+
+        HttpSession httpSession = req.getSession(false);
+        return httpSession != null && httpSession.getAttribute(authSessionAttribute) != null;
+    }
+
+    private boolean checkAuthentication(Method controllerMethod, HttpServletRequest req,
+            HttpServletResponse resp) throws IOException {
+        if (!controllerMethod.isAnnotationPresent(RequireAuth.class) || isAuthenticated(req)) {
+            return true;
+        }
+
+        resp.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentification requise");
+        return false;
+    }
+
     private Object[] initParams(Method method, HttpServletRequest req) throws Exception {
         Class<?>[] parameterTypes = method.getParameterTypes();
         Parameter[] parametersP = method.getParameters();
@@ -260,6 +282,10 @@ public class FrontController extends HttpServlet {
         }
 
         try {
+            if (!checkAuthentication(controllerMethod, req, resp)) {
+                return;
+            }
+
             Class<?> controllerClass = controllerMethod.getDeclaringClass();
             Object controllerInstance = controllerClass.getDeclaredConstructor().newInstance();
 
