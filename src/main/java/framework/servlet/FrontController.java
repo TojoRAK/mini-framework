@@ -228,7 +228,6 @@ public class FrontController extends HttpServlet {
                 parameters[i] = parseParameter(parameterVal, paramType);
             } else if (paramType.equals(SessionFw.class)) {
                 parameters[i] = getSession(req);
-
             } else {
                 System.out.println("TYPE DU PARAMETRE : " + parametersP[i].getType());
                 Object obj = parametersP[i].getType().getConstructor().newInstance();
@@ -274,11 +273,8 @@ public class FrontController extends HttpServlet {
                 }
             }
 
-            Object result;
-            if (session == null) {
-                result = controllerMethod.invoke(controllerInstance, parameters);
-            } else {
-                result = controllerMethod.invoke(controllerInstance, parameters);
+            Object result = controllerMethod.invoke(controllerInstance, parameters);
+            if (session != null) {
                 SessionUtils.ecraserSession(session, req.getSession());
             }
 
