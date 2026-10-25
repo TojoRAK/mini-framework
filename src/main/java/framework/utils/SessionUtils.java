@@ -6,19 +6,17 @@ import java.util.Map;
 
 import javax.servlet.http.HttpSession;
 
-public final class SessionUtils {
-
-    private SessionUtils() {
-    }
-
-    public static void chargerSessionMap(SessionFw sf, HttpSession session) {
+public class SessionUtils {
+    
+    public static void chargerSessionMap(SessionFw sf,HttpSession session){
         List<String> attributes = Collections.list(session.getAttributeNames());
-        for (String attr : attributes) {
-            sf.getSessionMap().put(attr, session.getAttribute(attr));
+
+        for(String attr : attributes){
+            Object val = session.getAttribute(attr);
+            sf.getSessionMap().put(attr, val);
         }
     }
-
-    public static void ecraserSession(SessionFw sf, HttpSession session) {
+    public static void ecraserSession(SessionFw sf, HttpSession session){
         List<String> attributes = Collections.list(session.getAttributeNames());
         for (String attr : attributes) {
             if (!sf.getSessionMap().containsKey(attr)) {
@@ -26,8 +24,10 @@ public final class SessionUtils {
             }
         }
 
-        for (Map.Entry<String, Object> entry : sf.getSessionMap().entrySet()) {
+        for(Map.Entry<String,Object> entry : sf.getSessionMap().entrySet()){
             session.setAttribute(entry.getKey(), entry.getValue());
         }
     }
+
+
 }

@@ -26,7 +26,7 @@ public class ApplicationListener implements ServletContextListener {
             Map<UrlMethod, Method> urlControllers = new HashMap<>();
             ServletContext sc = sce.getServletContext();
 
-            Map<String, SessionFw> sessions = new ConcurrentHashMap<>();
+            Map<String, SessionFw> sessions = new HashMap<>();
             sc.setAttribute("sessions", sessions);
 
             String packageName = sc.getInitParameter("controller");
