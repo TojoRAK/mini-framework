@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -24,9 +25,11 @@ public class ApplicationListener implements ServletContextListener {
 
             List<String> listController = new ArrayList<>();
             Map<UrlMethod, Method> urlControllers = new HashMap<>();
+            Map<Class<?>, Object> controllerInstances = new ConcurrentHashMap<>();
+
             ServletContext sc = sce.getServletContext();
 
-            Map<String, SessionFw> sessions = new HashMap<>();
+            Map<String, SessionFw> sessions = new ConcurrentHashMap<>();
             sc.setAttribute("sessions", sessions);
 
             String packageName = sc.getInitParameter("controller");
@@ -45,7 +48,7 @@ public class ApplicationListener implements ServletContextListener {
             sc.setAttribute("urlControllers", urlControllers);
             sc.setAttribute("authSessionAttribute", authSessionAttribute);
             sc.setAttribute("roleSessionAttribute", roleSessionAttribute);
-
+            sc.setAttribute("controllerInstances", controllerInstances);
             
             String uploadLocation = PropertiesReader.getProperty("upload-path");
 

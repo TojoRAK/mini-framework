@@ -46,6 +46,7 @@ public class FrontController extends HttpServlet {
     private Map<String, SessionFw> sessions;
     private String authSessionAttribute;
     private String roleSessionAttribute;
+    private Map<Class<?>, Object> controllerInstances;
 
     @SuppressWarnings("unchecked")
     @Override
@@ -63,6 +64,7 @@ public class FrontController extends HttpServlet {
         sessions = (Map<String, SessionFw>) getServletContext().getAttribute("sessions");
         authSessionAttribute = (String) getServletContext().getAttribute("authSessionAttribute");
         roleSessionAttribute = (String) getServletContext().getAttribute("roleSessionAttribute");
+        controllerInstances = (Map<Class<?>, Object>) getServletContext().getAttribute("controllerInstances"); 
         System.out.println("AUTH-SESSION-ATTRIBUTE =========== " + authSessionAttribute);
 
     }
@@ -324,8 +326,18 @@ public class FrontController extends HttpServlet {
                 return;
             }
 
+
             Class<?> controllerClass = controllerMethod.getDeclaringClass();
-            Object controllerInstance = controllerClass.getDeclaredConstructor().newInstance();
+            
+            
+            Object controllerInstance = null;
+            if(controllerInstances.containsKey(controllerClass)){
+                controllerInstance = controllerInstances.get(controllerClass);
+            }else{
+                controllerInstance = controllerClass.getDeclaredConstructor().newInstance();
+                controllerInstances.put(controllerClass, controllerInstance);
+
+            }
 
             System.out.println("Paramètres : ");
             Object[] parameters = initParams(controllerMethod, req);
