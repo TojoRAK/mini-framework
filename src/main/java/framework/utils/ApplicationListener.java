@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -18,8 +17,6 @@ import framework.annotation.Controller;
 
 public class ApplicationListener implements ServletContextListener {
 
-    private static final String AUTH_SESSION_ATTRIBUTE_PARAM = "";
-    private static final String AUTH_SESSION_ATTRIBUTE_PROPERTY = "auth-session-attribute";
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
@@ -39,14 +36,16 @@ public class ApplicationListener implements ServletContextListener {
             }
             String prefix = sc.getInitParameter("view.prefix");
             String suffix = sc.getInitParameter("view.suffix");
-            String authSessionAttribute = sc.getInitParameter("auth-session-attribute");
-            if (authSessionAttribute == null || authSessionAttribute.isBlank()) {
-                authSessionAttribute = PropertiesReader.getProperty(AUTH_SESSION_ATTRIBUTE_PROPERTY);
-            }
+            String authSessionAttribute = sc.getInitParameter("auth.session.attribute");
+            String roleSessionAttribute = sc.getInitParameter("role-session-attribute");
+
+            System.out.println("AUTH-SESSION-ATTRIBUTE =========== " + authSessionAttribute);
 
             sc.setAttribute("listController", listController);
             sc.setAttribute("urlControllers", urlControllers);
             sc.setAttribute("authSessionAttribute", authSessionAttribute);
+            sc.setAttribute("roleSessionAttribute", roleSessionAttribute);
+
             
             String uploadLocation = PropertiesReader.getProperty("upload-path");
 

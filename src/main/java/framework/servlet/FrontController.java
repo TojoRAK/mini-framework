@@ -6,7 +6,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.context.ApplicationContext;
@@ -24,6 +26,7 @@ import javax.servlet.http.Part;
 
 import framework.annotation.Json;
 import framework.annotation.RequireAuth;
+import framework.annotation.RequireRole;
 import framework.utils.FileMap;
 import framework.utils.FileUtils;
 import framework.utils.ModelAndView;
@@ -42,6 +45,7 @@ public class FrontController extends HttpServlet {
     private ApplicationContext springContext;
     private Map<String, SessionFw> sessions;
     private String authSessionAttribute;
+    private String roleSessionAttribute;
 
     @SuppressWarnings("unchecked")
     @Override
@@ -58,6 +62,9 @@ public class FrontController extends HttpServlet {
         springContext = (ApplicationContext) getServletContext().getAttribute("springContext");
         sessions = (Map<String, SessionFw>) getServletContext().getAttribute("sessions");
         authSessionAttribute = (String) getServletContext().getAttribute("authSessionAttribute");
+        roleSessionAttribute = (String) getServletContext().getAttribute("roleSessionAttribute");
+        System.out.println("AUTH-SESSION-ATTRIBUTE =========== " + authSessionAttribute);
+
     }
 
     @Override
@@ -206,6 +213,7 @@ public class FrontController extends HttpServlet {
         return sessions.computeIfAbsent(httpSession.getId(), id -> {
             SessionFw newSession = new SessionFw();
             SessionUtils.chargerSessionMap(newSession, httpSession);
+
             return newSession;
         });
     }
@@ -217,6 +225,32 @@ public class FrontController extends HttpServlet {
 
         HttpSession httpSession = req.getSession(false);
         return httpSession != null && httpSession.getAttribute(authSessionAttribute) != null;
+    }
+
+    private String getRole(HttpServletRequest req) {
+        if (!isAuthenticated(req)) {
+            return null;
+        }
+        if (roleSessionAttribute == null || roleSessionAttribute.isBlank()) {
+            return null;
+        }
+        HttpSession httpSession = req.getSession(false);
+        return (String) httpSession.getAttribute(roleSessionAttribute);
+    }
+
+    private boolean checkRole(Method controllerMethod, HttpServletRequest req, HttpServletResponse resp)
+            throws IOException {
+        if (!controllerMethod.isAnnotationPresent(RequireRole.class)) {
+            return true;
+        }
+        RequireRole annotation = (RequireRole) controllerMethod.getAnnotation(RequireRole.class);
+        List<String> authorizedRoles = Arrays.asList(annotation.values());
+
+        if (getRole(req) == null || !authorizedRoles.contains(getRole(req))) {
+            resp.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Vous n'avez pas accès à ceci");
+            return false;
+        }
+        return true;
     }
 
     private boolean checkAuthentication(Method controllerMethod, HttpServletRequest req,
@@ -249,6 +283,7 @@ public class FrontController extends HttpServlet {
 
                 parameters[i] = parseParameter(parameterVal, paramType);
             } else if (paramType.equals(SessionFw.class)) {
+                System.out.println("======= SESSION ========");
                 parameters[i] = getSession(req);
             } else {
                 System.out.println("TYPE DU PARAMETRE : " + parametersP[i].getType());
@@ -285,6 +320,9 @@ public class FrontController extends HttpServlet {
             if (!checkAuthentication(controllerMethod, req, resp)) {
                 return;
             }
+            if (!checkRole(controllerMethod, req, resp)) {
+                return;
+            }
 
             Class<?> controllerClass = controllerMethod.getDeclaringClass();
             Object controllerInstance = controllerClass.getDeclaredConstructor().newInstance();
@@ -302,6 +340,7 @@ public class FrontController extends HttpServlet {
             Object result = controllerMethod.invoke(controllerInstance, parameters);
             if (session != null) {
                 SessionUtils.ecraserSession(session, req.getSession());
+                System.out.println("======== SESSION ACTIVE =========");
             }
 
             if (controllerMethod.isAnnotationPresent(Json.class)) {
