@@ -1,16 +1,4 @@
 framework/annotation/Url.class
-framework/utils/PropertiesReader.class
-framework/utils/ApplicationListener.class
 framework/Main.class
-framework/utils/SessionFw.class
-framework/tests/Personne.class
-framework/utils/SessionUtils.class
-framework/utils/AnnotationFinder.class
-framework/utils/FileUtils.class
-framework/utils/FileMap.class
-framework/servlet/FrontController.class
-framework/utils/UrlMethod.class
-framework/utils/ModelAndView.class
-framework/utils/ClassFinder.class
 framework/annotation/Json.class
 framework/annotation/Controller.class
